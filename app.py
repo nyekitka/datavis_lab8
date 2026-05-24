@@ -1,62 +1,28 @@
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-
+from palettes import (
+    category_colors,
+    palette_colors,
+    segment_colors
+)
 
 st.set_page_config(
     layout="wide",
-    page_title="📊 Business Data Story",
-    page_icon="📊",
+    page_title="Business Data Story",
     initial_sidebar_state="expanded",
 )
-
-
-PALETTE = {
-    "primary": "#4F8EF7",
-    "secondary": "#F7914F",
-    "success": "#4FD1A5",
-    "danger": "#F74F6E",
-    "warning": "#F7D74F",
-    "bg": "#0F1117",
-    "card": "#1A1D27",
-    "text": "#E8EAF0",
-    "muted": "#8B8FA8",
-}
-
-SEGMENT_COLORS = {
-    "Premium": "#4F8EF7",
-    "Standard": "#4FD1A5",
-    "Budget": "#F7914F",
-}
-
-CATEGORY_COLORS = {
-    "Electronics": "#F74F6E",
-    "Clothing": "#4F8EF7",
-    "Home": "#4FD1A5",
-    "Books": "#F7D74F",
-    "Sports": "#F7914F",
-}
-
-REGION_COLORS = {
-    "North": "#4F8EF7",
-    "South": "#F74F6E",
-    "East": "#4FD1A5",
-    "West": "#F7914F",
-}
-
 
 
 PLOTLY_TEMPLATE = "plotly_dark"
 PLOTLY_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(family="Inter, sans-serif", color=PALETTE["text"]),
-    legend=dict(bgcolor="rgba(0,0,0,0.3)", bordercolor=PALETTE["muted"], borderwidth=1),
+    font=dict(family="Inter, sans-serif", color=palette_colors.TEXT),
+    legend=dict(bgcolor="rgba(0,0,0,0.3)", bordercolor=palette_colors.MUTED, borderwidth=1),
     margin=dict(t=50, b=40, l=10, r=10),
 )
 
@@ -71,13 +37,13 @@ st.markdown(
     }}
 
     .stApp {{
-        background: {PALETTE["bg"]};
-        color: {PALETTE["text"]};
+        background: {palette_colors.BG};
+        color: {palette_colors.TEXT};
     }}
 
     /* Карточки KPI */
     .kpi-card {{
-        background: {PALETTE["card"]};
+        background: {palette_colors.CARD};
         border: 1px solid #2A2D3E;
         border-radius: 12px;
         padding: 20px 24px;
@@ -86,24 +52,24 @@ st.markdown(
     .kpi-value {{
         font-size: 2rem;
         font-weight: 700;
-        color: {PALETTE["primary"]};
+        color: {palette_colors.PRIMARY};
     }}
     .kpi-label {{
         font-size: 0.85rem;
-        color: {PALETTE["muted"]};
+        color: {palette_colors.MUTED};
         margin-top: 4px;
     }}
     .kpi-delta {{
         font-size: 0.8rem;
         margin-top: 6px;
     }}
-    .kpi-delta.positive {{ color: {PALETTE["success"]}; }}
-    .kpi-delta.negative {{ color: {PALETTE["danger"]}; }}
+    .kpi-delta.positive {{ color: {palette_colors.SUCCESS}; }}
+    .kpi-delta.negative {{ color: {palette_colors.DANGER}; }}
 
     /* Информационные блоки */
     .insight-box {{
         background: linear-gradient(135deg, #1A1D27, #1E2235);
-        border-left: 4px solid {PALETTE["primary"]};
+        border-left: 4px solid {palette_colors.PRIMARY};
         border-radius: 8px;
         padding: 16px 20px;
         margin: 12px 0;
@@ -111,13 +77,13 @@ st.markdown(
         line-height: 1.6;
     }}
     .insight-box.warning {{
-        border-left-color: {PALETTE["warning"]};
+        border-left-color: {palette_colors.WARNING};
     }}
     .insight-box.danger {{
-        border-left-color: {PALETTE["danger"]};
+        border-left-color: {palette_colors.DANGER};
     }}
     .insight-box.success {{
-        border-left-color: {PALETTE["success"]};
+        border-left-color: {palette_colors.SUCCESS};
     }}
 
     /* Шаг-заголовок */
@@ -126,7 +92,7 @@ st.markdown(
         font-weight: 600;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: {PALETTE["primary"]};
+        color: {palette_colors.PRIMARY};
         margin-bottom: 4px;
     }}
 
@@ -143,15 +109,15 @@ st.markdown(
         background: #2A2D3E;
     }}
     .progress-step.active {{
-        background: {PALETTE["primary"]};
+        background: {palette_colors.PRIMARY};
     }}
     .progress-step.done {{
-        background: {PALETTE["success"]};
+        background: {palette_colors.SUCCESS};
     }}
 
     /* Сайдбар */
     section[data-testid="stSidebar"] {{
-        background: {PALETTE["card"]};
+        background: {palette_colors.CARD};
         border-right: 1px solid #2A2D3E;
     }}
 
@@ -167,7 +133,7 @@ st.markdown(
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
-    """Загружаем CSV, парсим даты, добавляем вспомогательные колонки."""
+    
     df = pd.read_csv("business_data.csv", parse_dates=["date"])
     df["month"] = df["date"].dt.to_period("M").astype(str)
     df["quarter"] = df["date"].dt.to_period("Q").astype(str)
@@ -183,7 +149,6 @@ def apply_layout(
     title: str = "",
     height: int = 420
 ) -> go.Figure:
-    """Применяем единый стиль макета к любому графику."""
     fig.update_layout(**PLOTLY_LAYOUT, title=title, height=height)
     fig.update_xaxes(gridcolor="#2A2D3E", zerolinecolor="#2A2D3E")
     fig.update_yaxes(gridcolor="#2A2D3E", zerolinecolor="#2A2D3E")
@@ -196,7 +161,6 @@ def kpi_card(
     delta: str = "",
     positive: bool = True
 ) -> str:
-    """Генерируем HTML-карточку KPI."""
     delta_class = "positive" if positive else "negative"
     delta_html = f'<div class="kpi-delta {delta_class}">{delta}</div>' if delta else ""
     return f"""
@@ -212,22 +176,18 @@ def insight(
     text: str,
     kind: str = ""
 ) -> None:
-    """Выводим цветной блок с инсайтом."""
+    
     st.markdown(f'<div class="insight-box {kind}">{text}</div>', unsafe_allow_html=True)
 
 
 def fmt_millions(x: float) -> str:
-    """Форматируем число как $X.Xм."""
+    
     return f"${x / 1_000_000:.2f}M"
 
 
 def sidebar_filters(df: pd.DataFrame, step_key: str) -> pd.DataFrame:
-    """
-    Фильтры по категории и региону в сайдбаре.
-    Возвращает отфильтрованный датафрейм.
-    """
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🔧 Фильтры")
+    st.sidebar.subheader("Фильтры")
 
     all_cats = sorted(df["category"].unique())
     selected_cats = st.sidebar.multiselect(
@@ -250,18 +210,17 @@ def sidebar_filters(df: pd.DataFrame, step_key: str) -> pd.DataFrame:
 
 
 STEPS = [
-    "Акт 1 - Обзор",
-    "Акт 2 - Аномалия",
-    "Акт 3 - Сегменты",
-    "Акт 4 - Причина",
-    "Акт 5 - Решение",
-    "Акт 6 - Рекомендации",
+    "Обзор",
+    "Аномалия",
+    "Сегменты",
+    "Причина",
+    "Решение",
+    "Рекомендации",
 ]
 
 if "step" not in st.session_state:
     st.session_state.step = 0
 
-# Сайдбар
 with st.sidebar:
     st.markdown("## Business Story")
     st.caption("Интерактивная история бизнес-данных за 2023-2024")
@@ -271,7 +230,6 @@ with st.sidebar:
     st.session_state.step = STEPS.index(step_choice)
 
     st.markdown("---")
-    # Кнопки назад/вперёд
     col_prev, col_next = st.columns(2)
     with col_prev:
         if st.button("◀ Назад", use_container_width=True):
@@ -284,7 +242,6 @@ with st.sidebar:
                 st.session_state.step += 1
                 st.rerun()
 
-# Прогресс-бар вверху страницы
 steps_html = "".join(
     f'<div class="progress-step {"done" if i < st.session_state.step else "active" if i == st.session_state.step else ""}"></div>'
     for i in range(len(STEPS))
@@ -296,7 +253,7 @@ df = load_data()
 
 if st.session_state.step == 0:
     st.markdown('<div class="step-header">Акт 1 из 6</div>', unsafe_allow_html=True)
-    st.title("Общая динамика бизнеса 2023–2024")
+    st.title("Общая динамика бизнеса 2023-2024")
 
     dff = sidebar_filters(df, "act1")
 
@@ -337,14 +294,14 @@ if st.session_state.step == 0:
     fig_line.add_trace(go.Scatter(
         x=monthly["month"], y=monthly["Выручка"],
         name="Выручка", mode="lines+markers",
-        line=dict(color=PALETTE["primary"], width=2.5),
+        line=dict(color=palette_colors.PRIMARY, width=2.5),
         marker=dict(size=5),
         hovertemplate="<b>%{x}</b><br>Выручка: $%{y:,.0f}<extra></extra>",
     ))
     fig_line.add_trace(go.Scatter(
         x=monthly["month"], y=monthly["Прибыль"],
         name="Прибыль", mode="lines+markers",
-        line=dict(color=PALETTE["success"], width=2.5),
+        line=dict(color=palette_colors.SUCCESS, width=2.5),
         marker=dict(size=5),
         hovertemplate="<b>%{x}</b><br>Прибыль: $%{y:,.0f}<extra></extra>",
     ))
@@ -357,12 +314,12 @@ if st.session_state.step == 0:
 
     fig_line.add_annotation(
         x="2023-11", y=nov23_val,
-        text="📈 Сезонный пик<br>ноябрь–декабрь",
+        text="Сезонный пик<br>ноябрь-декабрь",
         showarrow=True, arrowhead=2,
-        arrowcolor=PALETTE["warning"], font=dict(color=PALETTE["warning"], size=11),
-        bgcolor="rgba(0,0,0,0.5)", bordercolor=PALETTE["warning"],
+        arrowcolor=palette_colors.WARNING, font=dict(color=palette_colors.WARNING, size=11),
+        bgcolor="rgba(0,0,0,0.5)", bordercolor=palette_colors.WARNING,
     )
-    apply_layout(fig_line, "📈 Динамика выручки и прибыли по месяцам", height=400)
+    apply_layout(fig_line, "Динамика выручки и прибыли по месяцам", height=400)
     st.plotly_chart(fig_line, use_container_width=True)
 
     cat_monthly = (
@@ -372,17 +329,17 @@ if st.session_state.step == 0:
     )
     fig_bar = px.bar(
         cat_monthly, x="month", y="revenue", color="category",
-        color_discrete_map=CATEGORY_COLORS,
+        color_discrete_map=category_colors.model_dump(by_alias=True),
         labels={"revenue": "Выручка ($)", "month": "Месяц", "category": "Категория"},
         hover_data={"revenue": ":,.0f"},
         template=PLOTLY_TEMPLATE,
     )
-    apply_layout(fig_bar, "📊 Выручка по категориям (ежемесячно)", height=350)
+    apply_layout(fig_bar, "Выручка по категориям (ежемесячно)", height=350)
     st.plotly_chart(fig_bar, use_container_width=True)
 
     insight(
-        "💡 <b>Ключевой инсайт:</b> Бизнес показывает устойчивый рост год к году. "
-        "Сезонные пики в ноябре–декабре хорошо выражены. "
+        "<b>Ключевой инсайт:</b> Бизнес показывает устойчивый рост год к году. "
+        "Сезонные пики в ноябре-декабре хорошо выражены. "
         f"В 2024 году выручка выросла на <b>{rev_growth:.1f}%</b> по сравнению с 2023."
     )
 
@@ -407,18 +364,18 @@ elif st.session_state.step == 1:
     fig_anom.add_trace(go.Scatter(
         x=others["month"], y=others["profit"],
         name="Остальные категории", mode="lines",
-        line=dict(color=PALETTE["muted"], width=2, dash="dot"),
+        line=dict(color=palette_colors.MUTED, width=2, dash="dot"),
         hovertemplate="<b>%{x}</b><br>Прибыль (прочие): $%{y:,.0f}<extra></extra>",
     ))
     fig_anom.add_trace(go.Scatter(
         x=elec["month"], y=elec["profit"],
         name="Electronics", mode="lines+markers",
-        line=dict(color=PALETTE["danger"], width=3),
+        line=dict(color=palette_colors.DANGER, width=3),
         marker=dict(size=6),
         hovertemplate="<b>%{x}</b><br>Прибыль (Electronics): $%{y:,.0f}<extra></extra>",
     ))
 
-    # Зона аномалии: Q2–Q3 2024
+    # Зона аномалии: Q2-Q3 2024
     months = elec["month"].tolist()
     anomaly_start = "2024-04"
     anomaly_end = "2024-09"
@@ -427,7 +384,7 @@ elif st.session_state.step == 1:
         idx_e = months.index(anomaly_end)
         fig_anom.add_vrect(
             x0=anomaly_start, x1=anomaly_end,
-            fillcolor=PALETTE["danger"], opacity=0.12,
+            fillcolor=palette_colors.DANGER, opacity=0.12,
             layer="below", line_width=0,
         )
         mid_idx = (idx_s + idx_e) // 2
@@ -437,9 +394,9 @@ elif st.session_state.step == 1:
             x=mid_month, y=mid_val,
             text="Зона падения<br>прибыли",
             showarrow=True, arrowhead=3,
-            arrowcolor=PALETTE["danger"],
-            font=dict(color=PALETTE["danger"], size=12),
-            bgcolor="rgba(0,0,0,0.6)", bordercolor=PALETTE["danger"],
+            arrowcolor=palette_colors.DANGER,
+            font=dict(color=palette_colors.DANGER, size=12),
+            bgcolor="rgba(0,0,0,0.6)", bordercolor=palette_colors.DANGER,
             ax=40, ay=-60,
         )
 
@@ -478,7 +435,7 @@ elif st.session_state.step == 1:
     col1, col2 = st.columns(2)
     with col1:
         insight(
-            f"<b>Аномалия:</b> В апреле–сентябре 2024 прибыль Electronics просела "
+            f"<b>Аномалия:</b> В апреле-сентябре 2024 прибыль Electronics просела "
             f"относительно исторического среднего на <b>≈{abs(drop_pct):.0f}%</b>.",
             "warning"
         )
@@ -504,7 +461,7 @@ elif st.session_state.step == 2:
     )
     fig_stack = px.bar(
         seg_q, x="quarter", y="revenue", color="segment",
-        color_discrete_map=SEGMENT_COLORS,
+        color_discrete_map=segment_colors.model_dump(by_alias=True),
         barmode="stack",
         labels={"revenue": "Выручка ($)", "quarter": "Квартал", "segment": "Сегмент"},
         hover_data={"revenue": ":,.0f"},
@@ -530,7 +487,7 @@ elif st.session_state.step == 2:
         size="units_sold",
         color="segment",
         symbol="category",
-        color_discrete_map=SEGMENT_COLORS,
+        color_discrete_map=segment_colors.model_dump(by_alias=True),
         labels={
             "revenue": "Выручка ($)", "profit": "Прибыль ($)",
             "units_sold": "Кол-во единиц", "segment": "Сегмент",
@@ -583,17 +540,17 @@ elif st.session_state.step == 3:
         )
         fig_sat = px.line(
             sat_monthly, x="month", y="customer_satisfaction", color="category",
-            color_discrete_map=CATEGORY_COLORS,
-            labels={"customer_satisfaction": "Удовлетворённость (1–5)", "month": "Месяц"},
+            color_discrete_map=category_colors.model_dump(by_alias=True),
+            labels={"customer_satisfaction": "Удовлетворённость (1-5)", "month": "Месяц"},
             hover_data={"customer_satisfaction": ":.2f"},
             template=PLOTLY_TEMPLATE,
         )
         for trace in fig_sat.data:
             if trace.name == "Electronics":
                 trace.line.width = 3.5
-                trace.line.color = PALETTE["danger"]
+                trace.line.color = palette_colors.DANGER
         fig_sat.add_hline(
-            y=3.5, line_dash="dot", line_color=PALETTE["warning"],
+            y=3.5, line_dash="dot", line_color=palette_colors.WARNING,
             annotation_text="Пороговое значение 3.5",
             annotation_position="top left",
         )
@@ -615,7 +572,7 @@ elif st.session_state.step == 3:
             elec_monthly,
             x="satisfaction", y="profit",
             color="segment",
-            color_discrete_map=SEGMENT_COLORS,
+            color_discrete_map=segment_colors.model_dump(by_alias=True),
             trendline="ols",
             labels={"satisfaction": "Удовлетворённость", "profit": "Прибыль ($)", "segment": "Сегмент"},
             hover_data={"satisfaction": ":.2f", "profit": ":,.0f", "revenue": ":,.0f"},
@@ -637,7 +594,7 @@ elif st.session_state.step == 3:
 
     fig_prem = go.Figure(go.Bar(
         x=prem_only["quarter"], y=prem_only["share"],
-        marker_color=PALETTE["primary"],
+        marker_color=palette_colors.PRIMARY,
         hovertemplate="<b>%{x}</b><br>Доля Premium: %{y:.1f}%<extra></extra>",
     ))
     if not prem_only.empty:
@@ -646,8 +603,8 @@ elif st.session_state.step == 3:
             y=prem_only["share"].iloc[-1],
             text="Отток Premium",
             showarrow=True, arrowhead=2,
-            arrowcolor=PALETTE["danger"],
-            font=dict(color=PALETTE["danger"], size=12),
+            arrowcolor=palette_colors.DANGER,
+            font=dict(color=palette_colors.DANGER, size=12),
         )
     apply_layout(fig_prem, "Доля Premium-сегмента в выручке Electronics (%)", height=300)
     st.plotly_chart(fig_prem, use_container_width=True)
@@ -703,13 +660,13 @@ elif st.session_state.step == 4:
     fig_whatif.add_trace(go.Scatter(
         x=monthly_elec["month"], y=base_profit,
         name="Фактическая прибыль", mode="lines",
-        line=dict(color=PALETTE["danger"], width=2.5),
+        line=dict(color=palette_colors.DANGER, width=2.5),
         hovertemplate="<b>%{x}</b><br>Факт: $%{y:,.0f}<extra></extra>",
     ))
     fig_whatif.add_trace(go.Scatter(
         x=monthly_elec["month"], y=new_profit,
         name=f"Прогноз (+{sat_boost}% удовл.)", mode="lines+markers",
-        line=dict(color=PALETTE["success"], width=2.5, dash="dash"),
+        line=dict(color=palette_colors.SUCCESS, width=2.5, dash="dash"),
         marker=dict(size=5),
         hovertemplate="<b>%{x}</b><br>Прогноз: $%{y:,.0f}<extra></extra>",
     ))
@@ -788,7 +745,7 @@ elif st.session_state.step == 5:
     margin_cat["margin"] = (margin_cat["profit"] / margin_cat["revenue"] * 100).round(1)
     margin_cat = margin_cat.sort_values("margin")
 
-    colors = [PALETTE["danger"] if c == "Electronics" else PALETTE["primary"] for c in margin_cat["category"]]
+    colors = [palette_colors.DANGER if c == "Electronics" else palette_colors.PRIMARY for c in margin_cat["category"]]
     fig_margin = go.Figure(go.Bar(
         x=margin_cat["margin"],
         y=margin_cat["category"],
@@ -805,11 +762,11 @@ elif st.session_state.step == 5:
             y="Electronics",
             text="Требует внимания",
             showarrow=True, arrowhead=2,
-            arrowcolor=PALETTE["danger"],
-            font=dict(color=PALETTE["danger"], size=12),
+            arrowcolor=palette_colors.DANGER,
+            font=dict(color=palette_colors.DANGER, size=12),
             ax=80, ay=0,
         )
-    apply_layout(fig_margin, "📊 Маржинальность по категориям (%)", height=300)
+    apply_layout(fig_margin, "Маржинальность по категориям (%)", height=300)
     st.plotly_chart(fig_margin, use_container_width=True)
 
     st.markdown("---")
